@@ -10,17 +10,17 @@
 const FIELDS = {
   subcatchmentId: "subcatchment_id",
   cnComposite: "cn_composite",
-  runoff2yr: "runoff_2yr_mm",     // or volume_2yr_m3 if you prefer volume-based shading
+  runoff2yr: "runoff_2yr_mm",
   runoff5yr: "runoff_5yr_mm",
   runoff10yr: "runoff_10yr_mm",
 
   siteId: "site_id",
-  siteSubcatchmentId: "subcatchment_id",
-  giType: "gi_type",               // final chosen GI type per site
-  siteArea: "area_m2",
+  siteSubcatchmentId: "subcatchme",   // fixed
+  giType: "gi_type",
+  siteArea: "area_sqm",               // also check — your file uses area_sqm, not area_m2
   floodScore: "flood_attenuation_score",
   siteCost: "site_cost",
-  funded: "selected",              // boolean/1-0 from knapsack output
+  funded: "selected",
 };
 
 const GI_COLORS = {
@@ -141,7 +141,8 @@ function drawSubcatchments() {
 
 function passesFilters(props) {
   const giOk =
-    currentGiFilter === "all" || props[FIELDS.giType] === currentGiFilter;
+  currentGiFilter === "all" ||
+  String(props[FIELDS.giType]).toLowerCase().replace(/\s+/g, "_") === currentGiFilter;
   const fundedVal = props[FIELDS.funded];
   const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
   const fundedOk =
