@@ -1,0 +1,122 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1f2d24;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#header {
+  background: #1e5631;
+  color: white;
+  padding: 12px 20px;
+}
+
+#header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+#header p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #f4f7f4;
+  border-bottom: 1px solid #d8e0d8;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+}
+
+.control-group label {
+  margin-bottom: 3px;
+  font-weight: 600;
+  color: #3a4a3d;
+}
+
+.control-group select {
+  padding: 5px 8px;
+  border: 1px solid #c3d0c3;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+  min-height: 400px;
+}
+
+#summary-panel {
+  background: white;
+  border-top: 1px solid #d8e0d8;
+  padding: 10px 20px 16px;
+  font-size: 0.85rem;
+}
+
+#summary-panel h3 {
+  margin: 6px 0 8px;
+  font-size: 0.95rem;
+}
+
+#summary-content {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: #f4f7f4;
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 140px;
+}
+
+.stat .value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e5631;
+}
+
+.stat .label {
+  font-size: 0.75rem;
+  color: #5a6b5c;
+}
+
+.leaflet-popup-content { font-size: 0.85rem; }
+.leaflet-popup-content b { color: #1e5631; }
+
+.legend {
+  background: white;
+  padding: 8px 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.legend i {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
