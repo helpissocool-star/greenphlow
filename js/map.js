@@ -15,9 +15,9 @@ const FIELDS = {
   runoff10yr: "runoff_10yr_mm",
 
   siteId: "site_id",
-  siteSubcatchmentId: "subcatchme",   // fixed
+  siteSubcatchmentId: "subcatchme",
   giType: "gi_type",
-  siteArea: "area_sqm",               // also check — your file uses area_sqm, not area_m2
+  siteArea: "area_sqm",
   floodScore: "flood_attenuation_score",
   siteCost: "site_cost",
   funded: "selected",
