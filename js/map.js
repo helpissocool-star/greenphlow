@@ -140,7 +140,7 @@ function drawSubcatchments() {
 }
 
 function passesFilters(props) {
-  const giOk =
+const giOk =
   currentGiFilter === "all" ||
   String(props[FIELDS.giType]).toLowerCase().replace(/\s+/g, "_") === currentGiFilter;
   const fundedVal = props[FIELDS.funded];
