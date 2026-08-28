@@ -8,11 +8,11 @@ const FIELDS = {
 
   siteId: "site_id",
   siteSubcatchmentId: "subcatchme",
-  giType: "gi_type",              
+  giType: "gi_type_y",              
   siteArea: "area_sqm",
-  floodScore: "flood_attenuation_score",
-  siteCost: "site_cost",
-  funded: "selected",            
+  floodScore: "flood_attenuation_score_y",
+  siteCost: "site_cost_y",
+  funded: "selected_selection",            
   barangay: "brgy_name",          
 };
 
