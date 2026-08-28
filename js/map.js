@@ -1,27 +1,19 @@
-/* ============================================================
-   GreenPHlow — Leaflet map application
-   ------------------------------------------------------------
-   Expects two GeoJSON files in /data, already merged with your
-   Python outputs (see merge_for_web.py). Adjust the FIELD NAMES
-   below if your merged files use different column names.
-   ============================================================ */
 
-// ---- CONFIG: map these to your actual merged field names ----
 const FIELDS = {
   subcatchmentId: "subcatchment_id",
-  cnComposite: "cn_composite",
-  runoff2yr: "runoff_2yr_mm_x",     // or volume_2yr_m3 if you prefer volume-based shading
+  cnComposite: "cn_composite_x",
+  runoff2yr: "runoff_2yr_mm_x",    
   runoff5yr: "runoff_5yr_mm_x",
   runoff10yr: "runoff_10yr_mm_x",
 
   siteId: "site_id",
   siteSubcatchmentId: "subcatchme",
-  giType: "gi_type",               // final chosen GI type per site
+  giType: "gi_type",              
   siteArea: "area_sqm",
   floodScore: "flood_attenuation_score",
   siteCost: "site_cost",
-  funded: "selected",              // boolean/1-0 from knapsack output
-  barangay: "brgy_name",            // add this field via QGIS join before it'll show real data
+  funded: "selected",            
+  barangay: "brgy_name",          
 };
 
 const GI_COLORS = {
@@ -37,10 +29,6 @@ let currentShadeField = "runoff_10yr_mm";
 let currentGiFilter = "all";
 let currentFundedFilter = "all";
 
-// Optional extra QGIS reference layers, shown/hidden via the layer control.
-// Add or remove entries here to match whatever files you export from QGIS.
-// Any file that fails to load is skipped silently (so it's safe to list
-// layers you haven't exported yet).
 const EXTRA_LAYERS = [
   { file: "data/land_cover.geojson", label: "Land Cover", color: "#8a9a5b", fillOpacity: 0.5 },
   { file: "data/hsg.geojson", label: "Hydrologic Soil Group", color: "#5b7a9a", fillOpacity: 0.4 },
@@ -63,13 +51,13 @@ async function loadExtraLayers() {
   for (const cfg of EXTRA_LAYERS) {
     try {
       const res = await fetch(cfg.file);
-      if (!res.ok) continue; // file not exported yet — skip quietly
+      if (!res.ok) continue; 
       const geojson = await res.json();
       const layer = L.geoJSON(geojson, {
         style: { color: cfg.color, weight: 1, fillOpacity: cfg.fillOpacity },
       });
       layerControlEntries[cfg.label] = layer;
-      // not added to map by default — user turns them on via the control
+    
     } catch (e) {
       console.warn(`Skipping ${cfg.file}:`, e);
     }
@@ -177,7 +165,7 @@ function drawSites() {
       });
     },
     style: (feature) => {
-      // for polygon candidate sites instead of points
+
       const p = feature.properties;
       const fundedVal = p[FIELDS.funded];
       const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
@@ -325,9 +313,7 @@ function attachControls() {
 }
 
 function goToSite(siteId) {
-  // Show all sites regardless of current filters, so the searched-for
-  // site is guaranteed to be visible even if it's e.g. unfunded and the
-  // funding filter was set to "Funded only".
+
   currentGiFilter = "all";
   currentFundedFilter = "all";
   document.getElementById("giTypeFilter").value = "all";
