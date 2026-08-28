@@ -12,7 +12,7 @@ const FIELDS = {
   siteArea: "area_sqm",
   floodScore: "flood_attenuation_score_x",
   siteCost: "site_cost_x",
-  funded: "selected_y",            
+  funded: "selected",            
   barangay: "brgy_name",          
 };
 
