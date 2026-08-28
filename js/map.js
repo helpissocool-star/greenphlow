@@ -10,9 +10,9 @@
 const FIELDS = {
   subcatchmentId: "subcatchment_id",
   cnComposite: "cn_composite",
-  runoff2yr: "runoff_2yr_mm",     // or volume_2yr_m3 if you prefer volume-based shading
-  runoff5yr: "runoff_5yr_mm",
-  runoff10yr: "runoff_10yr_mm",
+  runoff2yr: "runoff_2yr_mm_x",     // or volume_2yr_m3 if you prefer volume-based shading
+  runoff5yr: "runoff_5yr_mm_x",
+  runoff10yr: "runoff_10yr_mm_x",
 
   siteId: "site_id",
   siteSubcatchmentId: "subcatchme",
@@ -21,7 +21,7 @@ const FIELDS = {
   floodScore: "flood_attenuation_score",
   siteCost: "site_cost",
   funded: "selected",              // boolean/1-0 from knapsack output
-  brgy_name: "barangay",            // add this field via QGIS join before it'll show real data
+  barangay: "brgy_name",            // add this field via QGIS join before it'll show real data
 };
 
 const GI_COLORS = {
