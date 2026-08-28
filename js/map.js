@@ -21,7 +21,7 @@ const FIELDS = {
   floodScore: "flood_attenuation_score",
   siteCost: "site_cost",
   funded: "selected",              // boolean/1-0 from knapsack output
-  barangay: "barangay",            // add this field via QGIS join before it'll show real data
+  brgy_name: "barangay",            // add this field via QGIS join before it'll show real data
 };
 
 const GI_COLORS = {
