@@ -45,27 +45,19 @@ const EXTRA_LAYERS = [
 
 async function loadData() {
   try {
-    // Try loading from root directory first (where your python script exports them)
-    let subRes = await fetch("data/web_subcatchments.geojson");
-    let siteRes = await fetch("data/web_candidate_sites.geojson");
-
-    // Fallback to data/ folder if root fetch fails
-    if (!subRes.ok) {
-      subRes = await fetch("data/web_subcatchments.geojson");
-    }
-    if (!siteRes.ok) {
-      siteRes = await fetch("data/data/web_candidate_sites.geojson") || await fetch("data/web_candidate_sites.geojson");
-    }
+    // Fetching explicitly from the data/ folder
+    const subRes = await fetch("data/web_subcatchments.geojson");
+    const siteRes = await fetch("data/web_candidate_sites.geojson");
 
     if (!subRes.ok || !siteRes.ok) {
-      throw new Error("Could not find web_subcatchments.geojson or web_candidate_sites.geojson. Make sure they are pushed to your repository.");
+      throw new Error("Could not find web_subcatchments.geojson or web_candidate_sites.geojson inside the data/ folder.");
     }
 
     subcatchmentData = await subRes.json();
     siteData = await siteRes.json();
   } catch (e) {
     console.error("Data loading failed:", e);
-    document.getElementById("summary-content").innerHTML = `<span style="color: #b91c1c; font-weight: 500;">Failed to load GeoJSON files. Check browser console (F12) for details.</span>`;
+    document.getElementById("summary-content").innerHTML = `<span style="color: #b91c1c; font-weight: 500;">Failed to load files from data/. Ensure they are placed inside the data/ folder and pushed to GitHub.</span>`;
     throw e;
   }
 }
