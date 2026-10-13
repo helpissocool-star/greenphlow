@@ -46,8 +46,8 @@ const EXTRA_LAYERS = [
 async function loadData() {
   try {
     // Try loading from root directory first (where your python script exports them)
-    let subRes = await fetch("web_subcatchments.geojson");
-    let siteRes = await fetch("web_candidate_sites.geojson");
+    let subRes = await fetch("data/web_subcatchments.geojson");
+    let siteRes = await fetch("data/web_candidate_sites.geojson");
 
     // Fallback to data/ folder if root fetch fails
     if (!subRes.ok) {
