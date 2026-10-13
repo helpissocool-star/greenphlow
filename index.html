@@ -21,10 +21,22 @@
     <div class="control-group">
       <label for="layerSelect">Subcatchment shading</label>
       <select id="layerSelect">
-        <option value="runoff_2yr">Runoff — 2-yr storm</option>
-        <option value="runoff_5yr">Runoff — 5-yr storm</option>
-        <option value="runoff_10yr" selected>Runoff — 10-yr storm</option>
+        <option value="runoff_2yr">Runoff — 2-yr storm (mm)</option>
+        <option value="runoff_5yr">Runoff — 5-yr storm (mm)</option>
+        <option value="runoff_10yr" selected>Runoff — 10-yr storm (mm)</option>
+        <option value="volume_2yr">Runoff Volume — 2-yr (m³)</option>
+        <option value="volume_5yr">Runoff Volume — 5-yr (m³)</option>
+        <option value="volume_10yr">Runoff Volume — 10-yr (m³)</option>
         <option value="cn_composite">Composite CN</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="scenarioSelect">Rainfall Scenario</label>
+      <select id="scenarioSelect">
+        <option value="2yr">2-Year Storm Scenario</option>
+        <option value="5yr">5-Year Storm Scenario</option>
+        <option value="10yr" selected>10-Year Storm Scenario</option>
       </select>
     </div>
 
@@ -42,8 +54,8 @@
       <label for="fundedFilter">Funding status</label>
       <select id="fundedFilter">
         <option value="all" selected>All sites</option>
-        <option value="funded">Funded only</option>
-        <option value="unfunded">Unfunded only</option>
+        <option value="funded">Funded only (Active Scenario)</option>
+        <option value="unfunded">Unfunded only (Active Scenario)</option>
       </select>
     </div>
 
