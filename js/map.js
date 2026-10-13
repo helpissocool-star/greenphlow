@@ -10,7 +10,7 @@ const FIELDS = {
 
   siteId: "site_id",
   siteSubcatchmentId: "subcatchment_id",
-  giType: "gi_type",               
+  giType: "gi_type_x",               
   siteArea: "area_m2",
   mrr2yr: "MRR_2yr_m3",
   mrr5yr: "MRR_5yr_m3",
