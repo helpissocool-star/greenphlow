@@ -1,18 +1,24 @@
-
 const FIELDS = {
   subcatchmentId: "subcatchment_id",
-  cnComposite: "cn_composite_x",
-  runoff2yr: "runoff_2yr_mm_x",    
-  runoff5yr: "runoff_5yr_mm_x",
-  runoff10yr: "runoff_10yr_mm_x",
+  cnComposite: "cn_composite",
+  runoff2yr: "runoff_2yr_mm",    
+  runoff5yr: "runoff_5yr_mm",
+  runoff10yr: "runoff_10yr_mm",
+  volume2yr: "volume_2yr_m3",
+  volume5yr: "volume_5yr_m3",
+  volume10yr: "volume_10yr_m3",
 
   siteId: "site_id",
-  siteSubcatchmentId: "subcatchme",
-  giType: "gi_type_x",              
-  siteArea: "area_sqm",
-  floodScore: "flood_attenuation_score_x",
-  siteCost: "site_cost_x",
-  funded: "selected",            
+  siteSubcatchmentId: "subcatchment_id",
+  giType: "gi_type",               
+  siteArea: "area_m2",
+  mrr2yr: "MRR_2yr_m3",
+  mrr5yr: "MRR_5yr_m3",
+  mrr10yr: "MRR_10yr_m3",
+  siteCost: "site_cost",
+  funded2yr: "selected_2yr",
+  funded5yr: "selected_5yr",
+  funded10yr: "selected_10yr",          
   barangay: "brgy_name",          
 };
 
@@ -28,6 +34,7 @@ let siteLayersById = {};
 let currentShadeField = "runoff_10yr_mm";
 let currentGiFilter = "all";
 let currentFundedFilter = "all";
+let currentScenario = "10yr"; // options: "2yr", "5yr", "10yr"
 
 const EXTRA_LAYERS = [
   { file: "data/land_cover.geojson", label: "Land Cover", color: "#8a9a5b", fillOpacity: 0.5 },
@@ -86,7 +93,6 @@ function colorScale(value, allValues) {
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
   const t = max > min ? (value - min) / (max - min) : 0.5;
-  // light yellow -> deep red ramp
   const stops = [
     [255, 247, 188],
     [254, 196, 79],
@@ -118,9 +124,9 @@ function drawSubcatchments() {
       layer.bindPopup(`
         <b>Subcatchment ${p[FIELDS.subcatchmentId]}</b><br/>
         Composite CN: ${fmt(p[FIELDS.cnComposite])}<br/>
-        Runoff (2-yr): ${fmt(p[FIELDS.runoff2yr])} mm<br/>
-        Runoff (5-yr): ${fmt(p[FIELDS.runoff5yr])} mm<br/>
-        Runoff (10-yr): ${fmt(p[FIELDS.runoff10yr])} mm
+        Runoff (2-yr): ${fmt(p[FIELDS.runoff2yr])} mm (${fmt(p[FIELDS.volume2yr])} m&sup3;)<br/>
+        Runoff (5-yr): ${fmt(p[FIELDS.runoff5yr])} mm (${fmt(p[FIELDS.volume5yr])} m&sup3;)<br/>
+        Runoff (10-yr): ${fmt(p[FIELDS.runoff10yr])} mm (${fmt(p[FIELDS.volume10yr])} m&sup3;)
       `);
     },
   }).addTo(map);
@@ -129,12 +135,18 @@ function drawSubcatchments() {
   updateLegend(allValues);
 }
 
+function getFundedStatus(props) {
+  const fundedField = FIELDS[`funded${currentScenario}`];
+  const fundedVal = props[fundedField];
+  return fundedVal === true || fundedVal === 1 || fundedVal === "1";
+}
+
 function passesFilters(props) {
   const giOk =
     currentGiFilter === "all" ||
     String(props[FIELDS.giType]).toLowerCase().replace(/\s+/g, "_") === currentGiFilter;
-  const fundedVal = props[FIELDS.funded];
-  const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
+  
+  const isFunded = getFundedStatus(props);
   const fundedOk =
     currentFundedFilter === "all" ||
     (currentFundedFilter === "funded" && isFunded) ||
@@ -154,8 +166,7 @@ function drawSites() {
   siteLayer = L.geoJSON(filtered, {
     pointToLayer: (feature, latlng) => {
       const p = feature.properties;
-      const fundedVal = p[FIELDS.funded];
-      const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
+      const isFunded = getFundedStatus(p);
       return L.circleMarker(latlng, {
         radius: isFunded ? 7 : 5,
         fillColor: GI_COLORS[p[FIELDS.giType]] || "#999",
@@ -165,10 +176,8 @@ function drawSites() {
       });
     },
     style: (feature) => {
-
       const p = feature.properties;
-      const fundedVal = p[FIELDS.funded];
-      const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
+      const isFunded = getFundedStatus(p);
       return {
         fillColor: GI_COLORS[p[FIELDS.giType]] || "#999",
         color: isFunded ? "#000" : "#666",
@@ -178,17 +187,19 @@ function drawSites() {
     },
     onEachFeature: (feature, layer) => {
       const p = feature.properties;
-      const fundedVal = p[FIELDS.funded];
-      const isFunded = fundedVal === true || fundedVal === 1 || fundedVal === "1";
+      const isFunded = getFundedStatus(p);
       siteLayersById[p[FIELDS.siteId]] = layer;
+      
+      const mrrField = FIELDS[`mrr${currentScenario}`];
+      
       layer.bindPopup(`
         <b>Site ${p[FIELDS.siteId]}</b> (Subcatchment ${p[FIELDS.siteSubcatchmentId]})<br/>
         Barangay: ${p[FIELDS.barangay] || "—"}<br/>
         GI type: ${labelize(p[FIELDS.giType])}<br/>
         Area: ${fmt(p[FIELDS.siteArea])} m&sup2;<br/>
-        Flood attenuation score: ${fmt(p[FIELDS.floodScore])}<br/>
+        Modeled Runoff Reduction (${currentScenario}): ${fmt(p[mrrField])} m&sup3;<br/>
         Estimated cost: ₱${fmt(p[FIELDS.siteCost])}<br/>
-        Status: <b>${isFunded ? "Funded" : "Not funded"}</b>
+        Status (${currentScenario}): <b>${isFunded ? "Funded" : "Not funded"}</b>
       `);
     },
   }).addTo(map);
@@ -215,27 +226,25 @@ function updateLegend(allValues) {
 }
 
 function updateSummary() {
-  const funded = siteData.features.filter((f) => {
-    const v = f.properties[FIELDS.funded];
-    return v === true || v === 1 || v === "1";
-  });
+  const funded = siteData.features.filter((f) => getFundedStatus(f.properties));
   const totalCost = funded.reduce(
     (sum, f) => sum + (Number(f.properties[FIELDS.siteCost]) || 0),
     0
   );
-  const avgScore =
+  const mrrField = FIELDS[`mrr${currentScenario}`];
+  const avgMrr =
     funded.length > 0
       ? funded.reduce(
-          (sum, f) => sum + (Number(f.properties[FIELDS.floodScore]) || 0),
+          (sum, f) => sum + (Number(f.properties[mrrField]) || 0),
           0
         ) / funded.length
       : 0;
 
   document.getElementById("summary-content").innerHTML = `
     <div class="stat"><div class="value">${siteData.features.length}</div><div class="label">Candidate sites</div></div>
-    <div class="stat"><div class="value">${funded.length}</div><div class="label">Sites funded</div></div>
+    <div class="stat"><div class="value">${funded.length}</div><div class="label">Sites funded (${currentScenario})</div></div>
     <div class="stat"><div class="value">₱${fmt(totalCost)}</div><div class="label">Total budget used</div></div>
-    <div class="stat"><div class="value">${fmt(avgScore)}</div><div class="label">Avg. flood score (funded)</div></div>
+    <div class="stat"><div class="value">${fmt(avgMrr)} m&sup3;</div><div class="label">Avg. MRR (${currentScenario})</div></div>
   `;
 }
 
@@ -253,12 +262,24 @@ function labelize(s) {
 
 function attachControls() {
   document.getElementById("layerSelect").addEventListener("change", (e) => {
-    currentShadeField = FIELDS[
-      { runoff_2yr: "runoff2yr", runoff_5yr: "runoff5yr",
-        runoff_10yr: "runoff10yr", cn_composite: "cnComposite" }[e.target.value]
-    ];
+    const keyMap = {
+      runoff_2yr: "runoff2yr", runoff_5yr: "runoff5yr", runoff_10yr: "runoff10yr",
+      volume_2yr: "volume2yr", volume_5yr: "volume5yr", volume_10yr: "volume10yr",
+      cn_composite: "cnComposite"
+    };
+    currentShadeField = FIELDS[keyMap[e.target.value]];
     drawSubcatchments();
   });
+
+  // Optional scenario switcher control if you add it to your HTML UI:
+  const scenarioSelect = document.getElementById("scenarioSelect");
+  if (scenarioSelect) {
+    scenarioSelect.addEventListener("change", (e) => {
+      currentScenario = e.target.value; // e.g. "2yr", "5yr", or "10yr"
+      drawSites();
+      updateSummary();
+    });
+  }
 
   document.getElementById("giTypeFilter").addEventListener("change", (e) => {
     currentGiFilter = e.target.value;
@@ -313,7 +334,6 @@ function attachControls() {
 }
 
 function goToSite(siteId) {
-
   currentGiFilter = "all";
   currentFundedFilter = "all";
   document.getElementById("giTypeFilter").value = "all";
