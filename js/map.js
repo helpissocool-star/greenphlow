@@ -44,44 +44,38 @@ const EXTRA_LAYERS = [
 ];
 
 async function loadData() {
-  try {
-    // Fetching explicitly from the data/ folder
-    const subRes = await fetch("data/web_subcatchments.geojson");
-    const siteRes = await fetch("data/web_candidate_sites.geojson");
+  let subRes, siteRes;
+  
+  // Try multiple possible paths to locate the exported files
+  const paths = [
+    { sub: "data/web_subcatchments.geojson", site: "data/web_candidate_sites.geojson" },
+    { sub: "web_subcatchments.geojson", site: "web_candidate_sites.geojson" },
+    { sub: "./web_subcatchments.geojson", site: "./web_candidate_sites.geojson" }
+  ];
 
-    if (!subRes.ok || !siteRes.ok) {
-      throw new Error("Could not find web_subcatchments.geojson or web_candidate_sites.geojson inside the data/ folder.");
-    }
-
-    subcatchmentData = await subRes.json();
-    siteData = await siteRes.json();
-  } catch (e) {
-    console.error("Data loading failed:", e);
-    document.getElementById("summary-content").innerHTML = `<span style="color: #b91c1c; font-weight: 500;">Failed to load files from data/. Ensure they are placed inside the data/ folder and pushed to GitHub.</span>`;
-    throw e;
-  }
-}
-
-async function loadExtraLayers() {
-  const layerControlEntries = {};
-
-  for (const cfg of EXTRA_LAYERS) {
+  for (const p of paths) {
     try {
-      const res = await fetch(cfg.file);
-      if (!res.ok) continue; 
-      const geojson = await res.json();
-      const layer = L.geoJSON(geojson, {
-        style: { color: cfg.color, weight: 1, fillOpacity: cfg.fillOpacity },
-      });
-      layerControlEntries[cfg.label] = layer;
+      subRes = await fetch(p.sub);
+      siteRes = await fetch(p.site);
+      if (subRes.ok && siteRes.ok) {
+        console.log(`Successfully loaded GeoJSON from path: ${p.sub}`);
+        break;
+      }
     } catch (e) {
-      console.warn(`Skipping ${cfg.file}:`, e);
+      // Try next path
     }
   }
 
-  if (Object.keys(layerControlEntries).length > 0) {
-    L.control.layers(null, layerControlEntries, { collapsed: false }).addTo(map);
+  if (!subRes || !subRes.ok || !siteRes || !siteRes.ok) {
+    document.getElementById("summary-content").innerHTML = `
+      <span style="color: #b91c1c; font-weight: 500;">
+        GeoJSON files not found! Ensure <code>web_subcatchments.geojson</code> and <code>web_candidate_sites.geojson</code> are pushed to your GitHub repository.
+      </span>`;
+    throw new Error("Could not find web GeoJSON files in any path.");
   }
+
+  subcatchmentData = await subRes.json();
+  siteData = await siteRes.json();
 }
 
 function initMap() {
