@@ -78,6 +78,28 @@ async function loadData() {
   siteData = await siteRes.json();
 }
 
+async function loadExtraLayers() {
+  const layerControlEntries = {};
+
+  for (const cfg of EXTRA_LAYERS) {
+    try {
+      const res = await fetch(cfg.file);
+      if (!res.ok) continue; 
+      const geojson = await res.json();
+      const layer = L.geoJSON(geojson, {
+        style: { color: cfg.color, weight: 1, fillOpacity: cfg.fillOpacity },
+      });
+      layerControlEntries[cfg.label] = layer;
+    } catch (e) {
+      console.warn(`Skipping ${cfg.file}:`, e);
+    }
+  }
+
+  if (Object.keys(layerControlEntries).length > 0) {
+    L.control.layers(null, layerControlEntries, { collapsed: false }).addTo(map);
+  }
+}
+
 function initMap() {
   map = L.map("map", { zoomControl: true });
 
