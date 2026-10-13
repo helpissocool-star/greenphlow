@@ -34,7 +34,7 @@ let siteLayersById = {};
 let currentShadeField = "runoff_10yr_mm";
 let currentGiFilter = "all";
 let currentFundedFilter = "all";
-let currentScenario = "10yr"; // "2yr", "5yr", "10yr"
+let currentScenario = "10yr"; // default fallback
 
 const EXTRA_LAYERS = [
   { file: "data/land_cover.geojson", label: "Land Cover", color: "#8a9a5b", fillOpacity: 0.5 },
@@ -45,8 +45,6 @@ const EXTRA_LAYERS = [
 
 async function loadData() {
   let subRes, siteRes;
-  
-  // Try multiple possible paths to locate the exported files
   const paths = [
     { sub: "data/web_subcatchments.geojson", site: "data/web_candidate_sites.geojson" },
     { sub: "web_subcatchments.geojson", site: "web_candidate_sites.geojson" },
@@ -57,21 +55,18 @@ async function loadData() {
     try {
       subRes = await fetch(p.sub);
       siteRes = await fetch(p.site);
-      if (subRes.ok && siteRes.ok) {
-        console.log(`Successfully loaded GeoJSON from path: ${p.sub}`);
-        break;
-      }
+      if (subRes.ok && siteRes.ok) break;
     } catch (e) {
-      // Try next path
+      // Continue trying next path
     }
   }
 
   if (!subRes || !subRes.ok || !siteRes || !siteRes.ok) {
     document.getElementById("summary-content").innerHTML = `
       <span style="color: #b91c1c; font-weight: 500;">
-        GeoJSON files not found! Ensure <code>web_subcatchments.geojson</code> and <code>web_candidate_sites.geojson</code> are pushed to your GitHub repository.
+        GeoJSON files not found! Ensure they are pushed to GitHub.
       </span>`;
-    throw new Error("Could not find web GeoJSON files in any path.");
+    throw new Error("Could not find web GeoJSON files.");
   }
 
   subcatchmentData = await subRes.json();
@@ -80,7 +75,6 @@ async function loadData() {
 
 async function loadExtraLayers() {
   const layerControlEntries = {};
-
   for (const cfg of EXTRA_LAYERS) {
     try {
       const res = await fetch(cfg.file);
@@ -94,7 +88,6 @@ async function loadExtraLayers() {
       console.warn(`Skipping ${cfg.file}:`, e);
     }
   }
-
   if (Object.keys(layerControlEntries).length > 0) {
     L.control.layers(null, layerControlEntries, { collapsed: false }).addTo(map);
   }
@@ -102,8 +95,6 @@ async function loadExtraLayers() {
 
 function initMap() {
   map = L.map("map", { zoomControl: true });
-
-  // Use standard OpenStreetMap tiles (no API key required)
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
@@ -160,6 +151,14 @@ function drawSubcatchments() {
   updateLegend(allValues);
 }
 
+// Determine active scenario dynamically based on UI selectors
+function getActiveScenario() {
+  if (currentFundedFilter.includes("2yr")) return "2yr";
+  if (currentFundedFilter.includes("5yr")) return "5yr";
+  if (currentFundedFilter.includes("10yr")) return "10yr";
+  return currentScenario; // Falls back to rainfall scenario dropdown
+}
+
 function isSiteFundedForScenario(props, scenario) {
   const fieldName = FIELDS[`funded${scenario}`];
   const val = props[fieldName];
@@ -172,12 +171,13 @@ function passesFilters(props) {
     String(props[FIELDS.giType]).toLowerCase().replace(/\s+/g, "_") === currentGiFilter;
   
   let fundedOk = true;
-  if (currentFundedFilter === "funded_2yr") fundedOk = isSiteFundedForScenario(props, "2yr");
-  else if (currentFundedFilter === "unfunded_2yr") fundedOk = !isSiteFundedForScenario(props, "2yr");
-  else if (currentFundedFilter === "funded_5yr") fundedOk = isSiteFundedForScenario(props, "5yr");
-  else if (currentFundedFilter === "unfunded_5yr") fundedOk = !isSiteFundedForScenario(props, "5yr");
-  else if (currentFundedFilter === "funded_10yr") fundedOk = isSiteFundedForScenario(props, "10yr");
-  else if (currentFundedFilter === "unfunded_10yr") fundedOk = !isSiteFundedForScenario(props, "10yr");
+  const activeScen = getActiveScenario();
+
+  if (currentFundedFilter.startsWith("funded_")) {
+    fundedOk = isSiteFundedForScenario(props, activeScen);
+  } else if (currentFundedFilter.startsWith("unfunded_")) {
+    fundedOk = !isSiteFundedForScenario(props, activeScen);
+  }
 
   return giOk && fundedOk;
 }
@@ -185,6 +185,8 @@ function passesFilters(props) {
 function drawSites() {
   if (siteLayer) map.removeLayer(siteLayer);
   siteLayersById = {};
+
+  const activeScen = getActiveScenario();
 
   const filtered = {
     type: "FeatureCollection",
@@ -194,7 +196,7 @@ function drawSites() {
   siteLayer = L.geoJSON(filtered, {
     pointToLayer: (feature, latlng) => {
       const p = feature.properties;
-      const isFunded = isSiteFundedForScenario(p, currentScenario);
+      const isFunded = isSiteFundedForScenario(p, activeScen);
       return L.circleMarker(latlng, {
         radius: isFunded ? 7 : 5,
         fillColor: GI_COLORS[p[FIELDS.giType]] || "#999",
@@ -205,19 +207,19 @@ function drawSites() {
     },
     onEachFeature: (feature, layer) => {
       const p = feature.properties;
-      const isFunded = isSiteFundedForScenario(p, currentScenario);
+      const isFunded = isSiteFundedForScenario(p, activeScen);
       siteLayersById[p[FIELDS.siteId]] = layer;
       
-      const mrrField = FIELDS[`mrr${currentScenario}`];
+      const mrrField = FIELDS[`mrr${activeScen}`];
       
       layer.bindPopup(`
         <b>Site ${p[FIELDS.siteId] || "—"}</b> (Subcatchment ${p[FIELDS.siteSubcatchmentId] || "—"})<br/>
         Barangay: ${p[FIELDS.barangay] || "—"}<br/>
         GI type: ${labelize(p[FIELDS.giType])}<br/>
         Area: ${fmt(p[FIELDS.siteArea])} m&sup2;<br/>
-        MRR (${currentScenario}): ${fmt(p[mrrField])} m&sup3;<br/>
+        MRR (${activeScen}): ${fmt(p[mrrField])} m&sup3;<br/>
         Estimated cost: ₱${fmt(p[FIELDS.siteCost])}<br/>
-        Status (${currentScenario}): <b>${isFunded ? "Funded" : "Not funded"}</b>
+        Status (${activeScen}): <b>${isFunded ? "Funded" : "Not funded"}</b>
       `);
     },
   }).addTo(map);
@@ -244,12 +246,13 @@ function updateLegend(allValues) {
 }
 
 function updateSummary() {
-  const funded = siteData.features.filter((f) => isSiteFundedForScenario(f.properties, currentScenario));
+  const activeScen = getActiveScenario();
+  const funded = siteData.features.filter((f) => isSiteFundedForScenario(f.properties, activeScen));
   const totalCost = funded.reduce(
     (sum, f) => sum + (Number(f.properties[FIELDS.siteCost]) || 0),
     0
   );
-  const mrrField = FIELDS[`mrr${currentScenario}`];
+  const mrrField = FIELDS[`mrr${activeScen}`];
   const avgMrr =
     funded.length > 0
       ? funded.reduce(
@@ -260,9 +263,9 @@ function updateSummary() {
 
   document.getElementById("summary-content").innerHTML = `
     <div class="stat"><div class="value">${siteData.features.length}</div><div class="label">Candidate sites</div></div>
-    <div class="stat"><div class="value">${funded.length}</div><div class="label">Sites funded (${currentScenario})</div></div>
+    <div class="stat"><div class="value">${funded.length}</div><div class="label">Sites funded (${activeScen})</div></div>
     <div class="stat"><div class="value">₱${fmt(totalCost)}</div><div class="label">Total budget used</div></div>
-    <div class="stat"><div class="value">${fmt(avgMrr)} m&sup3;</div><div class="label">Avg. MRR (${currentScenario})</div></div>
+    <div class="stat"><div class="value">${fmt(avgMrr)} m&sup3;</div><div class="label">Avg. MRR (${activeScen})</div></div>
   `;
 }
 
@@ -307,6 +310,7 @@ function attachControls() {
   document.getElementById("fundedFilter").addEventListener("change", (e) => {
     currentFundedFilter = e.target.value;
     drawSites();
+    updateSummary();
   });
 
   const searchInput = document.getElementById("siteSearch");
@@ -357,6 +361,7 @@ function goToSite(siteId) {
   document.getElementById("giTypeFilter").value = "all";
   document.getElementById("fundedFilter").value = "all";
   drawSites();
+  updateSummary();
 
   const layer = siteLayersById[siteId];
   if (!layer) return;
